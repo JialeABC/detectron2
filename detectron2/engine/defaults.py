@@ -106,14 +106,15 @@ Run on multiple machines:
 """,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--config-file", default="", metavar="FILE", help="path to config file")
+    parser.add_argument("--config-file", default="D:/Deeplearning_code/yolov8/detectron2/configs/COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml", metavar="FILE", help="path to config file")
     parser.add_argument(
         "--resume",
+        default = False,
         action="store_true",
         help="Whether to attempt to resume from the checkpoint directory. "
         "See documentation of `DefaultTrainer.resume_or_load()` for what it means.",
     )
-    parser.add_argument("--eval-only", action="store_true", help="perform evaluation only")
+    parser.add_argument("--eval-only", default=False, action="store_true", help="perform evaluation only")
     parser.add_argument("--num-gpus", type=int, default=1, help="number of gpus *per machine*")
     parser.add_argument("--num-machines", type=int, default=1, help="total number of machines")
     parser.add_argument(
@@ -137,7 +138,7 @@ Modify config options at the end of the command. For Yacs configs, use
 space-separated "PATH.KEY VALUE" pairs.
 For python-based LazyConfig, use "path.key=value".
         """.strip(),
-        default=None,
+        default="D:/Deeplearning_code/detectron2-main/weight/model_final_280758.pkl",
         nargs=argparse.REMAINDER,
     )
     return parser

@@ -20,6 +20,8 @@ import logging
 import os
 from collections import OrderedDict
 
+from detectron2.data.datasets.my_coco import register_my_datasets
+
 import detectron2.utils.comm as comm
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.config import get_cfg
@@ -164,4 +166,5 @@ def invoke_main() -> None:
 
 
 if __name__ == "__main__":
+    register_my_datasets()
     invoke_main()  # pragma: no cover

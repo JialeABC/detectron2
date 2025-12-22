@@ -145,6 +145,8 @@ class Metadata(types.SimpleNamespace):
         # Ensure that metadata of the same name stays consistent
         try:
             oldval = getattr(self, key)
+            if "\\" in oldval:
+                oldval = oldval.replace("\\", "/")
             assert oldval == val, (
                 "Attribute '{}' in the metadata of '{}' cannot be set "
                 "to a different value!\n{} != {}".format(key, self.name, oldval, val)
