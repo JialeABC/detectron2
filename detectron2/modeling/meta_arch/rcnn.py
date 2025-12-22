@@ -18,6 +18,9 @@ from ..proposal_generator import build_proposal_generator
 from ..roi_heads import build_roi_heads
 from .build import META_ARCH_REGISTRY
 
+from disentangle_feature.extractor_disentangle_feature import disen_feature_extractor
+from disentangle_feature.loss_disentangle import disentangle_loss
+
 __all__ = ["GeneralizedRCNN", "ProposalNetwork"]
 
 
@@ -157,14 +160,35 @@ class GeneralizedRCNN(nn.Module):
 
         features = self.backbone(images.tensor)
 
+        ####Etr和Eti的构建####
+        Ftr, Fti = disen_feature_extractor(features)
+        ####Etr和Eti的构建####
+
         if self.proposal_generator is not None:
-            proposals, proposal_losses = self.proposal_generator(images, features, gt_instances)
+            # proposals, proposal_losses = self.proposal_generator(images, features, gt_instances)
+            if self.training:
+                proposals_r, proposal_losses_r = self.proposal_generator(images, Ftr, gt_instances)
+                proposals_i, proposal_losses_i = self.proposal_generator(images, Fti, gt_instances)
+            else:
+                proposals_r, proposal_losses_r = self.proposal_generator(images, Ftr, gt_instances)
         else:
             assert "proposals" in batched_inputs[0]
             proposals = [x["proposals"].to(self.device) for x in batched_inputs]
             proposal_losses = {}
 
-        _, detector_losses = self.roi_heads(images, features, proposals, gt_instances)
+        # _, detector_losses = self.roi_heads(images, features, proposals, gt_instances)
+        if self.training:
+            _, detector_losses, pooler_feature_r, gt_cls, pred_cls = self.roi_heads(images, Ftr, proposals_r, gt_instances)
+            _, detector_losses, pooler_feature_i, _, _ = self.roi_heads(images, Fti, proposals_i, gt_instances)
+
+            # 执行对比损失和熵损失#
+            contrastive_loss, entropy_loss = disentangle_loss(pooler_feature_r, pooler_feature_i, gt_cls, pred_cls, self.roi_heads)
+            # 执行对比损失和熵损失#
+        else:
+            _, detector_losses, pooler_feature_r = self.roi_heads(images, Ftr, proposals_r, gt_instances)
+
+
+
         if self.vis_period > 0:
             storage = get_event_storage()
             if storage.iter % self.vis_period == 0:
@@ -172,7 +196,9 @@ class GeneralizedRCNN(nn.Module):
 
         losses = {}
         losses.update(detector_losses)
-        losses.update(proposal_losses)
+        losses.update(proposal_losses_r)
+        losses['loss_contras'] = contrastive_loss
+        losses['loss_entropy'] = entropy_loss
         return losses
 
     def inference(

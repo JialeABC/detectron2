@@ -736,13 +736,13 @@ class StandardROIHeads(ROIHeads):
         del targets
 
         if self.training:
-            losses = self._forward_box(features, proposals)
+            losses, pooler_feature, gt_cls, pred_cls = self._forward_box(features, proposals)
             # Usually the original proposals used by the box head are used by the mask, keypoint
             # heads. But when `self.train_on_pred_boxes is True`, proposals will contain boxes
             # predicted by the box head.
             losses.update(self._forward_mask(features, proposals))
             losses.update(self._forward_keypoint(features, proposals))
-            return proposals, losses
+            return proposals, losses, pooler_feature, gt_cls, pred_cls
         else:
             pred_instances = self._forward_box(features, proposals)
             # During inference cascaded prediction is used: the mask and keypoints heads are only
@@ -795,13 +795,18 @@ class StandardROIHeads(ROIHeads):
             In inference, a list of `Instances`, the predicted instances.
         """
         features = [features[f] for f in self.box_in_features]
-        box_features = self.box_pooler(features, [x.proposal_boxes for x in proposals])
+        box_features = self.box_pooler(features, [x.proposal_boxes for x in proposals])  #完成ROI Align, box_features大小为（8192，256，7，7）
+
+        #完成ROI Align，得到ROI 对齐后的结果
+        pooler_feature = box_features
+        #完成ROI Align，得到ROI 对齐后的结果
+
         box_features = self.box_head(box_features)
         predictions = self.box_predictor(box_features)
         del box_features
 
         if self.training:
-            losses = self.box_predictor.losses(predictions, proposals)
+            losses, gt_cls = self.box_predictor.losses(predictions, proposals)
             # proposals is modified in-place below, so losses must be computed first.
             if self.train_on_pred_boxes:
                 with torch.no_grad():
@@ -810,7 +815,7 @@ class StandardROIHeads(ROIHeads):
                     )
                     for proposals_per_image, pred_boxes_per_image in zip(proposals, pred_boxes):
                         proposals_per_image.proposal_boxes = Boxes(pred_boxes_per_image)
-            return losses
+            return losses, pooler_feature, gt_cls, predictions[0]
         else:
             pred_instances, _ = self.box_predictor.inference(predictions, proposals)
             return pred_instances
