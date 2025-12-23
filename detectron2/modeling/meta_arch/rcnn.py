@@ -189,7 +189,7 @@ class GeneralizedRCNN(nn.Module):
             # 映射头到同一纬度#
 
             # 执行对比损失和熵损失#
-            contrastive_loss, entropy_loss = disentangle_loss(z_tr, z_ti, gt_cls, pred_cls, self.roi_heads)
+            # contrastive_loss, entropy_loss = disentangle_loss(z_tr, z_ti, gt_cls, pred_cls, self.roi_heads)
             # 执行对比损失和熵损失#
         else:
             _, detector_losses, pooler_feature_r = self.roi_heads(images, Ftr, proposals_r, gt_instances)
@@ -204,8 +204,8 @@ class GeneralizedRCNN(nn.Module):
         losses = {}
         losses.update(detector_losses)
         losses.update(proposal_losses_r)
-        losses['loss_contras'] = contrastive_loss
-        losses['loss_entropy'] = entropy_loss
+        # losses['loss_contras'] = contrastive_loss
+        # losses['loss_entropy'] = entropy_loss
         return losses
 
     def inference(
