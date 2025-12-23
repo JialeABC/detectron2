@@ -39,6 +39,7 @@ from detectron2.evaluation import (
     verify_results,
 )
 from detectron2.modeling import GeneralizedRCNNWithTTA
+from disentangle_feature.custom_model import CustomModel
 
 
 def build_evaluator(cfg, dataset_name, output_folder=None):

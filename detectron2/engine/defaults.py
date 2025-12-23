@@ -47,6 +47,7 @@ from detectron2.utils.logger import setup_logger
 from . import hooks
 from .train_loop import AMPTrainer, SimpleTrainer, TrainerBase
 
+
 __all__ = [
     "create_ddp_model",
     "default_argument_parser",

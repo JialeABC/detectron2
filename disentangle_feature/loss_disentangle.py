@@ -2,8 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from detectron2.modeling.roi_heads.roi_heads import StandardROIHeads
+
 class projection_head(nn.Module):
-    def __init__(self, in_channels, input_height=1, input_width=1, hidden_dim=512, output_dim=1024):
+    def __init__(self, in_channels=256, input_height=7, input_width=7, hidden_dim=512, output_dim=1024):
         super().__init__()
         self.in_features = in_channels * input_height * input_width
 
@@ -141,12 +142,7 @@ def loss_entropy(z_tr, z_ti, pred_cls, roi_heads):
 
     return L_eco
 
-def disentangle_loss(pooler_feature_r, pooler_feature_i, gt_cls, pred_cls, roi_heads):
-    B, C, H, W = pooler_feature_r.shape
-    projH = projection_head(in_channels=C, input_height=H, input_width=W).to('cuda')
-    proj_tr, proj_ti = projH, projH
-    z_tr = proj_tr(pooler_feature_r)   #(B,....)
-    z_ti = proj_ti(pooler_feature_i)   #(B,....)
+def disentangle_loss(z_tr, z_ti, gt_cls, pred_cls, roi_heads):
     contrastive_loss = loss_contrastive(z_tr, z_ti, gt_cls)
     entropy_loss = loss_entropy(z_tr, z_ti, pred_cls, roi_heads)
 

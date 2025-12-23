@@ -18,7 +18,6 @@ from ..proposal_generator import build_proposal_generator
 from ..roi_heads import build_roi_heads
 from .build import META_ARCH_REGISTRY
 
-from disentangle_feature.extractor_disentangle_feature import disen_feature_extractor
 from disentangle_feature.loss_disentangle import disentangle_loss
 
 __all__ = ["GeneralizedRCNN", "ProposalNetwork"]
@@ -161,7 +160,10 @@ class GeneralizedRCNN(nn.Module):
         features = self.backbone(images.tensor)
 
         ####Etr和Eti的构建####
-        Ftr, Fti = disen_feature_extractor(features)
+        Ftr, Fti = {}, {}
+        for key, val in features.items():
+            Ftr[key] = self.tr_disen_feature_extractor(val)
+            Fti[key] = self.ti_disen_feature_extractor(val)
         ####Etr和Eti的构建####
 
         if self.proposal_generator is not None:
@@ -181,8 +183,13 @@ class GeneralizedRCNN(nn.Module):
             _, detector_losses, pooler_feature_r, gt_cls, pred_cls = self.roi_heads(images, Ftr, proposals_r, gt_instances)
             _, detector_losses, pooler_feature_i, _, _ = self.roi_heads(images, Fti, proposals_i, gt_instances)
 
+            #映射头到同一纬度#
+            z_tr = self.projection_head(pooler_feature_r)
+            z_ti = self.projection_head(pooler_feature_i)
+            # 映射头到同一纬度#
+
             # 执行对比损失和熵损失#
-            contrastive_loss, entropy_loss = disentangle_loss(pooler_feature_r, pooler_feature_i, gt_cls, pred_cls, self.roi_heads)
+            contrastive_loss, entropy_loss = disentangle_loss(z_tr, z_ti, gt_cls, pred_cls, self.roi_heads)
             # 执行对比损失和熵损失#
         else:
             _, detector_losses, pooler_feature_r = self.roi_heads(images, Ftr, proposals_r, gt_instances)
