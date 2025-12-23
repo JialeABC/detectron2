@@ -815,8 +815,11 @@ class StandardROIHeads(ROIHeads):
                     )
                     for proposals_per_image, pred_boxes_per_image in zip(proposals, pred_boxes):
                         proposals_per_image.proposal_boxes = Boxes(pred_boxes_per_image)
+
+
             return losses, pooler_feature, gt_cls, predictions[0]
         else:
+            del pooler_feature
             pred_instances, _ = self.box_predictor.inference(predictions, proposals)
             return pred_instances
 

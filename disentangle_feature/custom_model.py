@@ -13,8 +13,8 @@ class CustomModel(GeneralizedRCNN):
         super().__init__(cfg)
 
         # 1. 先冻结整个原始模型的所有参数
-        for param in self.parameters():
-            param.requires_grad = False
+        # for param in self.parameters():
+        #     param.requires_grad = False
 
         self.tr_disen_feature_extractor = base_disen_feature_extractor()
         self.ti_disen_feature_extractor = base_disen_feature_extractor()
@@ -22,8 +22,8 @@ class CustomModel(GeneralizedRCNN):
 
         # 3. 显式设置你的模块为可训练（覆盖上面的冻结）
         for param in self.tr_disen_feature_extractor.parameters():
-            param.requires_grad = True
+            param.requires_grad = False
         for param in self.ti_disen_feature_extractor.parameters():
-            param.requires_grad = True
+            param.requires_grad = False
         for param in self.projection_head.parameters():
-            param.requires_grad = True
+            param.requires_grad = False
