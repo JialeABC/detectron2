@@ -202,8 +202,8 @@ class GeneralizedRCNN(nn.Module):
                 self.visualize_training(batched_inputs, proposals)
 
         losses = {}
-        losses.update(detector_losses)
-        losses.update(proposal_losses_r)
+        # losses.update(detector_losses)
+        # losses.update(proposal_losses_r)
         losses['loss_contras'] = contrastive_loss
         losses['loss_entropy'] = entropy_loss
         return losses
