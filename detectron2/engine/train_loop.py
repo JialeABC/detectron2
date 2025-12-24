@@ -13,6 +13,10 @@ import detectron2.utils.comm as comm
 from detectron2.utils.events import EventStorage, get_event_storage
 from detectron2.utils.logger import _log_api_usage
 
+from itertools import cycle
+# from tools.train_net import Trainer
+from rewarder.create_batched_inputs import batched_inputs
+
 __all__ = ["HookBase", "TrainerBase", "SimpleTrainer", "AMPTrainer"]
 
 
@@ -244,6 +248,8 @@ class SimpleTrainer(TrainerBase):
         model,
         data_loader,
         optimizer,
+        inf_data_loader,
+        teacher_model,
         gather_metric_period=1,
         zero_grad_before_forward=False,
         async_write_metrics=False,
@@ -272,6 +278,8 @@ class SimpleTrainer(TrainerBase):
 
         self.model = model
         self.data_loader = data_loader
+        self.inf_data_loader = inf_data_loader
+        self.teacher_model = teacher_model
         # to access the data loader iterator, call `self._data_loader_iter`
         self._data_loader_iter_obj = None
         self.optimizer = optimizer
@@ -291,7 +299,14 @@ class SimpleTrainer(TrainerBase):
         """
         If you want to do something with the data, you can wrap the dataloader.
         """
-        data = next(self._data_loader_iter)
+        # data = next(self._data_loader_iter)
+
+        #取数据#
+        dl_iter, inf_dl_iter = self._data_loader_iter
+        data = next(dl_iter)
+        inf_data = next(inf_dl_iter)
+        #取数据#
+
         data_time = time.perf_counter() - start
 
         if self.zero_grad_before_forward:
@@ -304,6 +319,20 @@ class SimpleTrainer(TrainerBase):
         """
         If you want to do something with the losses, you can wrap the model.
         """
+
+        #教师模型推理红外伪标签#
+        input_batch = batched_inputs(inf_data)
+        self.teacher_model.eval()
+        with torch.no_grad():
+            predictions = []
+            for batch in input_batch:
+                prediction = self.teacher_model([batch])[0]
+                predictions.append(prediction)
+            pass
+
+        #教师模型推理红外伪标签#
+
+        #学生模型#
         loss_dict = self.model(data)
         if isinstance(loss_dict, torch.Tensor):
             losses = loss_dict
@@ -339,8 +368,9 @@ class SimpleTrainer(TrainerBase):
     def _data_loader_iter(self):
         # only create the data loader iterator when it is used
         if self._data_loader_iter_obj is None:
-            self._data_loader_iter_obj = iter(self.data_loader)
-        return self._data_loader_iter_obj
+            self._data_loader_iter_obj = cycle(self.data_loader)
+            self.inf_data_loader_iter_obj = iter(self.inf_data_loader)
+        return self._data_loader_iter_obj, self.inf_data_loader_iter_obj
 
     def reset_data_loader(self, data_loader_builder):
         """
@@ -442,6 +472,8 @@ class AMPTrainer(SimpleTrainer):
         model,
         data_loader,
         optimizer,
+        inf_data_loader,
+        teacher_model,
         gather_metric_period=1,
         zero_grad_before_forward=False,
         grad_scaler=None,
@@ -482,7 +514,14 @@ class AMPTrainer(SimpleTrainer):
         from torch.cuda.amp import autocast
 
         start = time.perf_counter()
-        data = next(self._data_loader_iter)
+        # data= next(self._data_loader_iter)
+
+        # 取数据#
+        dl_iter, inf_dl_iter = self._data_loader_iter
+        data = next(dl_iter)
+        inf_data = next(inf_dl_iter)
+        # 取数据#
+
         data_time = time.perf_counter() - start
 
         if self.zero_grad_before_forward:

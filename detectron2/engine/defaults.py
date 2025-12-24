@@ -47,6 +47,9 @@ from detectron2.utils.logger import setup_logger
 from . import hooks
 from .train_loop import AMPTrainer, SimpleTrainer, TrainerBase
 
+from rewarder.create_inf_dataloader import inf_dataloader
+
+
 __all__ = [
     "create_ddp_model",
     "default_argument_parser",
@@ -409,15 +412,32 @@ class DefaultTrainer(TrainerBase):
 
         # Assume these objects must be constructed in this order.
         model = self.build_model(cfg)
+
+        # 创建teacher模型,并冻结teacher_model#
+        teacher_model = self.build_model(cfg)
+        # 创建teacher模型#
+
         optimizer = self.build_optimizer(cfg, model)
         data_loader = self.build_train_loader(cfg)
 
+        #红外无标签数据#
+        inf_data_loader = inf_dataloader("D:/Deeplearning_code/yolov8/detectron2/tools/datasets/coco/inf_train2017")
+        #红外无标签数据#
+
         model = create_ddp_model(model, broadcast_buffers=False)
+
         self._trainer = (AMPTrainer if cfg.SOLVER.AMP.ENABLED else SimpleTrainer)(
-            model, data_loader, optimizer
+            model, data_loader, optimizer,inf_data_loader = inf_data_loader, teacher_model = teacher_model
         )
 
         self.scheduler = self.build_lr_scheduler(cfg, optimizer)
+
+        #加载预训练模型进来#
+        DetectionCheckpointer(teacher_model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
+            cfg.MODEL.WEIGHTS, resume=False
+        )
+        # 加载预训练模型进来#
+
         self.checkpointer = DetectionCheckpointer(
             # Assume you want to save checkpoints together with logs/statistics
             model,
