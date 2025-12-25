@@ -1,5 +1,5 @@
 MODEL:
-  META_ARCHITECTURE: "GeneralizedRCNN"
+  META_ARCHITECTURE: "CustomRCNNWithRewarder"                    #"GeneralizedRCNN"
   BACKBONE:
     NAME: "build_resnet_fpn_backbone"
   RESNETS:

@@ -725,6 +725,7 @@ class StandardROIHeads(ROIHeads):
         features: Dict[str, torch.Tensor],
         proposals: List[Instances],
         targets: Optional[List[Instances]] = None,
+        student_inf =False
     ) -> Tuple[List[Instances], Dict[str, torch.Tensor]]:
         """
         See :class:`ROIHeads.forward`.
@@ -736,13 +737,19 @@ class StandardROIHeads(ROIHeads):
         del targets
 
         if self.training:
-            losses = self._forward_box(features, proposals)
-            # Usually the original proposals used by the box head are used by the mask, keypoint
-            # heads. But when `self.train_on_pred_boxes is True`, proposals will contain boxes
-            # predicted by the box head.
-            losses.update(self._forward_mask(features, proposals))
-            losses.update(self._forward_keypoint(features, proposals))
-            return proposals, losses
+            if student_inf==False:
+                losses = self._forward_box(features, proposals)
+                # Usually the original proposals used by the box head are used by the mask, keypoint
+                # heads. But when `self.train_on_pred_boxes is True`, proposals will contain boxes
+                # predicted by the box head.
+                losses.update(self._forward_mask(features, proposals))
+                losses.update(self._forward_keypoint(features, proposals))
+                return proposals, losses
+            else:
+                boxes_for_gt, scores_for_gt, gt_boxes_list, gt_classes_list = self._forward_box(features, proposals, student_inf=student_inf)
+                return boxes_for_gt, scores_for_gt, gt_boxes_list, gt_classes_list
+
+
         else:
             pred_instances = self._forward_box(features, proposals)
             # During inference cascaded prediction is used: the mask and keypoints heads are only
@@ -777,7 +784,7 @@ class StandardROIHeads(ROIHeads):
         instances = self._forward_keypoint(features, instances)
         return instances
 
-    def _forward_box(self, features: Dict[str, torch.Tensor], proposals: List[Instances]):
+    def _forward_box(self, features: Dict[str, torch.Tensor], proposals: List[Instances], student_inf=False):
         """
         Forward logic of the box prediction branch. If `self.train_on_pred_boxes is True`,
             the function puts predicted boxes in the `proposal_boxes` field of `proposals` argument.
@@ -801,16 +808,62 @@ class StandardROIHeads(ROIHeads):
         del box_features
 
         if self.training:
-            losses = self.box_predictor.losses(predictions, proposals)
-            # proposals is modified in-place below, so losses must be computed first.
-            if self.train_on_pred_boxes:
-                with torch.no_grad():
-                    pred_boxes = self.box_predictor.predict_boxes_for_gt_classes(
-                        predictions, proposals
-                    )
-                    for proposals_per_image, pred_boxes_per_image in zip(proposals, pred_boxes):
-                        proposals_per_image.proposal_boxes = Boxes(pred_boxes_per_image)
-            return losses
+            if student_inf==False:
+                losses = self.box_predictor.losses(predictions, proposals)
+                # proposals is modified in-place below, so losses must be computed first.
+                if self.train_on_pred_boxes:
+                    with torch.no_grad():
+                        pred_boxes = self.box_predictor.predict_boxes_for_gt_classes(
+                            predictions, proposals
+                        )
+                        for proposals_per_image, pred_boxes_per_image in zip(proposals, pred_boxes):
+                            proposals_per_image.proposal_boxes = Boxes(pred_boxes_per_image)
+                return losses
+            else:
+                # pred_box = self.box_predictor.predict_boxes(predictions,proposals)
+                # pred_box1 =self.box_predictor.predict_boxes_for_gt_classes(predictions,proposals)
+                # pred_cls = self.box_predictor.predict_probs(predictions,proposals)
+                # return pred_box, pred_cls
+                # Step 1: 获取所有类别的预测框和概率
+                all_boxes_list = self.box_predictor.predict_boxes(predictions, proposals)  # [(Ri, K*4)]
+                probs_list = self.box_predictor.predict_probs(predictions, proposals)  # [(Ri, K+1)]
+
+                # Step 2: 获取 gt_classes
+                gt_classes_list = [p.gt_classes for p in proposals]  # [(Ri,)]
+                # 真实框（绝对坐标，XYXY_ABS）
+                gt_boxes_list = [p.gt_boxes.tensor for p in proposals]  # List[Tensor]
+
+                # Step 3: 提取“GT 类别对应的预测框”和“GT 类别对应的预测概率”
+                K = 7  # 假设已知前景类数量
+
+                boxes_for_gt = []
+                scores_for_gt = []
+
+                for all_boxes, probs, gt_cls in zip(all_boxes_list, probs_list, gt_classes_list):
+                    if all_boxes.shape[1] == 4:
+                        # class-agnostic: box 与类别无关
+                        boxes_gt = all_boxes
+                        # 分类分数仍需按 gt_cls 取（但通常只用于 foreground）
+                        cls_idx = gt_cls.clamp(min=0, max=probs.shape[1] - 1)
+                        scores_gt = probs[torch.arange(probs.shape[0]), cls_idx]
+                    else:
+                        # class-specific: reshape 并索引
+                        boxes = all_boxes.view(-1, K, 4)  # (Ri, K, 4)
+                        cls_idx = gt_cls.clamp(min=0, max=K - 1)  # 背景/ignored 被 clamp 到 0~K-1
+                        boxes_gt = boxes[torch.arange(boxes.shape[0]), cls_idx]  # (Ri, 4)
+                        # 注意：probs 是 (Ri, K+1)，背景在索引 0 或 K，根据你的设置
+                        # 假设 gt_cls ∈ [0, K-1] 表示前景，则直接用
+                        scores_gt = probs[torch.arange(probs.shape[0]), cls_idx]
+
+                    boxes_for_gt.append(boxes_gt)
+                    scores_for_gt.append(scores_gt)
+
+                return boxes_for_gt, scores_for_gt, gt_boxes_list, gt_classes_list
+
+
+
+
+
         else:
             pred_instances, _ = self.box_predictor.inference(predictions, proposals)
             return pred_instances

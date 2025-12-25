@@ -39,6 +39,7 @@ from detectron2.evaluation import (
     verify_results,
 )
 from detectron2.modeling import GeneralizedRCNNWithTTA
+from rewarder.CustomModel import CustomRCNNWithRewarder
 
 
 def build_evaluator(cfg, dataset_name, output_folder=None):

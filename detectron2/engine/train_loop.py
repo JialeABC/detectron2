@@ -16,6 +16,8 @@ from detectron2.utils.logger import _log_api_usage
 from itertools import cycle
 # from tools.train_net import Trainer
 from rewarder.create_batched_inputs import batched_inputs
+from rewarder.create_inf_dataloader import create_student_dataloader
+
 
 __all__ = ["HookBase", "TrainerBase", "SimpleTrainer", "AMPTrainer"]
 
@@ -322,18 +324,26 @@ class SimpleTrainer(TrainerBase):
 
         #教师模型推理红外伪标签#
         input_batch = batched_inputs(inf_data)
-        self.teacher_model.eval()
+        # self.teacher_model.eval()
         with torch.no_grad():
             predictions = []
             for batch in input_batch:
-                prediction = self.teacher_model([batch])[0]
+                prediction = self.teacher_model(batch)
                 predictions.append(prediction)
-            pass
 
-        #教师模型推理红外伪标签#
+        student_inf_data = create_student_dataloader(input_batch,predictions,inf_data)
 
-        #学生模型#
+
+        # 红外数据进入学生模型#
+        inf_loss_dict = self.model(student_inf_data, student_inf=True)
+
+        #可见光数据正则化学生模型#
         loss_dict = self.model(data)
+
+
+
+
+
         if isinstance(loss_dict, torch.Tensor):
             losses = loss_dict
             loss_dict = {"total_loss": loss_dict}

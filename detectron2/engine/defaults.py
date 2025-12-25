@@ -49,7 +49,6 @@ from .train_loop import AMPTrainer, SimpleTrainer, TrainerBase
 
 from rewarder.create_inf_dataloader import inf_dataloader
 
-
 __all__ = [
     "create_ddp_model",
     "default_argument_parser",
@@ -414,7 +413,7 @@ class DefaultTrainer(TrainerBase):
         model = self.build_model(cfg)
 
         # 创建teacher模型,并冻结teacher_model#
-        teacher_model = self.build_model(cfg)
+        # teacher_model = self.build_model(cfg)
         # 创建teacher模型#
 
         optimizer = self.build_optimizer(cfg, model)
@@ -427,15 +426,15 @@ class DefaultTrainer(TrainerBase):
         model = create_ddp_model(model, broadcast_buffers=False)
 
         self._trainer = (AMPTrainer if cfg.SOLVER.AMP.ENABLED else SimpleTrainer)(
-            model, data_loader, optimizer,inf_data_loader = inf_data_loader, teacher_model = teacher_model
+            model, data_loader, optimizer,inf_data_loader = inf_data_loader, teacher_model = DefaultPredictor(cfg),
         )
 
         self.scheduler = self.build_lr_scheduler(cfg, optimizer)
 
         #加载预训练模型进来#
-        DetectionCheckpointer(teacher_model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
-            cfg.MODEL.WEIGHTS, resume=False
-        )
+        # DetectionCheckpointer(teacher_model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
+        #     cfg.MODEL.WEIGHTS, resume=False
+        # )
         # 加载预训练模型进来#
 
         self.checkpointer = DetectionCheckpointer(

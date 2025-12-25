@@ -17,6 +17,7 @@ from ..postprocessing import detector_postprocess
 from ..proposal_generator import build_proposal_generator
 from ..roi_heads import build_roi_heads
 from .build import META_ARCH_REGISTRY
+from rewarder.compute_loss_for_rewarder import compute_rewarder_loss
 
 __all__ = ["GeneralizedRCNN", "ProposalNetwork"]
 
@@ -123,7 +124,7 @@ class GeneralizedRCNN(nn.Module):
             storage.put_image(vis_name, vis_img)
             break  # only visualize one image in a batch
 
-    def forward(self, batched_inputs: List[Dict[str, torch.Tensor]]):
+    def forward(self, batched_inputs: List[Dict[str, torch.Tensor]], student_inf = False):
         """
         Args:
             batched_inputs: a list, batched outputs of :class:`DatasetMapper` .
@@ -164,7 +165,14 @@ class GeneralizedRCNN(nn.Module):
             proposals = [x["proposals"].to(self.device) for x in batched_inputs]
             proposal_losses = {}
 
-        _, detector_losses = self.roi_heads(images, features, proposals, gt_instances)
+        if student_inf==False:
+            _, detector_losses = self.roi_heads(images, features, proposals, gt_instances, student_inf=student_inf)
+        else:
+            boxes_for_gt, scores_for_gt, gt_boxes_list, gt_classes_list = self.roi_heads(images, features, proposals, gt_instances, student_inf=student_inf)
+            #计算rewarder#
+            rewader_loss = compute_rewarder_loss(boxes_for_gt, scores_for_gt, gt_boxes_list, gt_classes_list)
+            pass
+
         if self.vis_period > 0:
             storage = get_event_storage()
             if storage.iter % self.vis_period == 0:

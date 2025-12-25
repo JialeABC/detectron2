@@ -14,7 +14,7 @@ from detectron2.config import get_cfg
 from detectron2.data.detection_utils import read_image
 from detectron2.utils.logger import setup_logger
 
-from vision.fair.detectron2.demo.predictor import VisualizationDemo
+from predictor import VisualizationDemo
 
 # constants
 WINDOW_NAME = "COCO detections"
@@ -40,7 +40,7 @@ def get_parser():
     parser = argparse.ArgumentParser(description="Detectron2 demo for builtin configs")
     parser.add_argument(
         "--config-file",
-        default="configs/quick_schedules/mask_rcnn_R_50_FPN_inference_acc_test.yaml",
+        default="D:/Deeplearning_code/yolov8/detectron2/configs/COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml",
         metavar="FILE",
         help="path to config file",
     )
@@ -49,6 +49,7 @@ def get_parser():
     parser.add_argument(
         "--input",
         nargs="+",
+        default=["D:/Deeplearning_code/yolov8/detectron2/tools/datasets/coco/temp/"],
         help="A list of space separated input images; "
         "or a single glob pattern such as 'directory/*.jpg'",
     )
@@ -56,6 +57,7 @@ def get_parser():
         "--output",
         help="A file or directory to save output visualizations. "
         "If not given, will show output in an OpenCV window.",
+        default="D:/Deeplearning_code/yolov8/detectron2/tools/datasets/coco/temp1/"
     )
 
     parser.add_argument(
@@ -67,7 +69,7 @@ def get_parser():
     parser.add_argument(
         "--opts",
         help="Modify config options using the command-line 'KEY VALUE' pairs",
-        default=[],
+        default=['MODEL.WEIGHTS', 'D:/Deeplearning_code/yolov8/detectron2/tools/output/model_0009999.pth'],
         nargs=argparse.REMAINDER,
     )
     return parser
@@ -102,10 +104,11 @@ def main() -> None:
     demo = VisualizationDemo(cfg)
 
     if args.input:
-        if len(args.input) == 1:
-            args.input = glob.glob(os.path.expanduser(args.input[0]))
-            assert args.input, "The input path(s) was not found"
-        for path in tqdm.tqdm(args.input, disable=not args.output):
+        if os.path.isdir(args.input[0]):  # 判断是否是文件夹路径
+            image_files = glob.glob(os.path.join(args.input[0], "*.jpg"))  # 可以改为其他格式，如 .png
+            # image_files.extend(glob.glob(os.path.join(args.input[0], "*.png")))
+            assert image_files, "No image files found in the folder."
+        for path in tqdm.tqdm(image_files, disable=not args.output):
             # use PIL, to be consistent with evaluation
             img = read_image(path, format="BGR")
             start_time = time.time()
