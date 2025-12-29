@@ -746,8 +746,12 @@ class StandardROIHeads(ROIHeads):
                 losses.update(self._forward_keypoint(features, proposals))
                 return proposals, losses
             else:
-                boxes_for_gt, scores_for_gt, gt_boxes_list, gt_classes_list = self._forward_box(features, proposals, student_inf=student_inf)
-                return boxes_for_gt, scores_for_gt, gt_boxes_list, gt_classes_list
+
+                losses, boxes_for_gt, scores_for_gt, gt_boxes_list, gt_classes_list = self._forward_box(features, proposals, student_inf=student_inf)
+                losses.update(self._forward_mask(features, proposals))
+                losses.update(self._forward_keypoint(features, proposals))
+                return losses, boxes_for_gt, scores_for_gt, gt_boxes_list, gt_classes_list
+
 
 
         else:
@@ -820,6 +824,8 @@ class StandardROIHeads(ROIHeads):
                             proposals_per_image.proposal_boxes = Boxes(pred_boxes_per_image)
                 return losses
             else:
+                losses = self.box_predictor.losses(predictions, proposals)
+                pred_cls = self.box_predictor.predict_boxes_for_gt_classes(predictions, proposals)
                 # pred_box = self.box_predictor.predict_boxes(predictions,proposals)
                 # pred_box1 =self.box_predictor.predict_boxes_for_gt_classes(predictions,proposals)
                 # pred_cls = self.box_predictor.predict_probs(predictions,proposals)
@@ -858,7 +864,7 @@ class StandardROIHeads(ROIHeads):
                     boxes_for_gt.append(boxes_gt)
                     scores_for_gt.append(scores_gt)
 
-                return boxes_for_gt, scores_for_gt, gt_boxes_list, gt_classes_list
+                return losses, boxes_for_gt, scores_for_gt, gt_boxes_list, gt_classes_list
 
 
 

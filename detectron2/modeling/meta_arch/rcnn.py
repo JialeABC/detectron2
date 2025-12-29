@@ -124,7 +124,7 @@ class GeneralizedRCNN(nn.Module):
             storage.put_image(vis_name, vis_img)
             break  # only visualize one image in a batch
 
-    def forward(self, batched_inputs: List[Dict[str, torch.Tensor]], student_inf = False):
+    def forward(self, batched_inputs: List[Dict[str, torch.Tensor]]):
         """
         Args:
             batched_inputs: a list, batched outputs of :class:`DatasetMapper` .
@@ -165,13 +165,13 @@ class GeneralizedRCNN(nn.Module):
             proposals = [x["proposals"].to(self.device) for x in batched_inputs]
             proposal_losses = {}
 
-        if student_inf==False:
-            _, detector_losses = self.roi_heads(images, features, proposals, gt_instances, student_inf=student_inf)
-        else:
-            boxes_for_gt, scores_for_gt, gt_boxes_list, gt_classes_list = self.roi_heads(images, features, proposals, gt_instances, student_inf=student_inf)
-            #计算rewarder#
-            rewader_loss = compute_rewarder_loss(boxes_for_gt, scores_for_gt, gt_boxes_list, gt_classes_list)
-            pass
+
+        # _, detector_losses = self.roi_heads(images, features, proposals, gt_instances)
+
+        detector_losses, boxes_for_gt, scores_for_gt, gt_boxes_list, gt_classes_list = self.roi_heads(images, features, proposals, gt_instances, student_inf =True)
+        #计算rewarder#
+        rewader_loss = compute_rewarder_loss(boxes_for_gt, scores_for_gt, gt_boxes_list, gt_classes_list, self.rewarder)
+        pass
 
         if self.vis_period > 0:
             storage = get_event_storage()
@@ -181,6 +181,7 @@ class GeneralizedRCNN(nn.Module):
         losses = {}
         losses.update(detector_losses)
         losses.update(proposal_losses)
+        losses["loss_reward"] = rewader_loss
         return losses
 
     def inference(

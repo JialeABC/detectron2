@@ -420,13 +420,13 @@ class DefaultTrainer(TrainerBase):
         data_loader = self.build_train_loader(cfg)
 
         #红外无标签数据#
-        inf_data_loader = inf_dataloader("D:/Deeplearning_code/yolov8/detectron2/tools/datasets/coco/inf_train2017")
+        # inf_data_loader = inf_dataloader("D:/Deeplearning_code/yolov8/detectron2/tools/datasets/coco/inf_train2017")
         #红外无标签数据#
 
         model = create_ddp_model(model, broadcast_buffers=False)
 
         self._trainer = (AMPTrainer if cfg.SOLVER.AMP.ENABLED else SimpleTrainer)(
-            model, data_loader, optimizer,inf_data_loader = inf_data_loader, teacher_model = DefaultPredictor(cfg),
+            model, data_loader, optimizer,
         )
 
         self.scheduler = self.build_lr_scheduler(cfg, optimizer)
