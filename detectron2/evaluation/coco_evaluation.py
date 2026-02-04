@@ -280,6 +280,10 @@ class COCOEvaluator(DatasetEvaluator):
                 coco_eval, task, class_names=self._metadata.get("thing_classes")
             )
             self._results[task] = res
+            precisions = coco_eval.eval["precision"]  # (10, 101, num_classes, 4, 3)
+            recalls = coco_eval.eval["recall"]  # (10, num_classes, 4, 3)
+            print("precision: ", precisions)
+            print("recall: ", recalls)
 
     def _eval_box_proposals(self, predictions):
         """

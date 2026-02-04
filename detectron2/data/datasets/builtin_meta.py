@@ -18,13 +18,13 @@ COCO model (with correct class names and colors).
 # All coco categories, together with their nice-looking visualization colors
 # It's from https://github.com/cocodataset/panopticapi/blob/master/panoptic_coco_categories.json
 COCO_CATEGORIES = [
-    {"color": [220, 20, 60], "isthing": 1, "id": 1, "name": "person"},
-    {"color": [119, 11, 32], "isthing": 1, "id": 2, "name": "bike"},
-    {"color": [0, 0, 142], "isthing": 1, "id": 3, "name": "car"},
-    {"color": [0, 0, 230], "isthing": 1, "id": 4, "name": "motor"},
-    {"color": [106, 0, 228], "isthing": 1, "id": 5, "name": "bus"},
-    {"color": [0, 60, 100], "isthing": 1, "id": 6, "name": "train"},
-    {"color": [0, 80, 100], "isthing": 1, "id": 7, "name": "truck"}
+    {"color": [220, 20, 60], "isthing": 1, "id": 0, "name": "car"},
+    {"color": [119, 11, 32], "isthing": 1, "id": 1, "name": "truck"},
+    {"color": [0, 0, 142], "isthing": 1, "id": 2, "name": "bus"},
+    {"color": [0, 0, 230], "isthing": 1, "id": 3, "name": "van"},
+    {"color": [106, 0, 228], "isthing": 1, "id": 4, "name": "freight_car"},
+    # {"color": [0, 60, 100], "isthing": 1, "id": 6, "name": "train"},
+    # {"color": [0, 80, 100], "isthing": 1, "id": 7, "name": "truck"}
 ]
 
 # fmt: off
@@ -109,7 +109,7 @@ ADE20K_SEM_SEG_CATEGORIES = [
 def _get_coco_instances_meta():
     thing_ids = [k["id"] for k in COCO_CATEGORIES if k["isthing"] == 1]
     thing_colors = [k["color"] for k in COCO_CATEGORIES if k["isthing"] == 1]
-    assert len(thing_ids) == 7, len(thing_ids)
+    assert len(thing_ids) == 5, len(thing_ids)
     # Mapping from the incontiguous COCO category id to an id in [0, 79]
     thing_dataset_id_to_contiguous_id = {k: i for i, k in enumerate(thing_ids)}
     thing_classes = [k["name"] for k in COCO_CATEGORIES if k["isthing"] == 1]

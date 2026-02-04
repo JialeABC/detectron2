@@ -1,6 +1,6 @@
 _BASE_: "../Base-RCNN-FPN.yaml"
 MODEL:
-  WEIGHTS: "D:/Deeplearning_code/yolov8/detectron2/weight/model_final_280758.pkl"
+  WEIGHTS: "D:/Deeplearning_code/yolov8/detectron2/weight/IBN-Net/model_with_ibn_backbone_no_bn1.pkl"
   MASK_ON: False
   RESNETS:
     DEPTH: 50
