@@ -18,15 +18,39 @@ COCO model (with correct class names and colors).
 # All coco categories, together with their nice-looking visualization colors
 # It's from https://github.com/cocodataset/panopticapi/blob/master/panoptic_coco_categories.json
 COCO_CATEGORIES = [
-    {"color": [220, 20, 60], "isthing": 1, "id": 1, "name": "B-1B"},
-    {"color": [119, 11, 32], "isthing": 1, "id": 2, "name": "B-52"},
-    {"color": [0, 0, 142], "isthing": 1, "id": 3, "name": "C-5"},
-    {"color": [0, 0, 230], "isthing": 1, "id": 4, "name": "C-17A"},
-    {"color": [106, 0, 228], "isthing": 1, "id": 5, "name": "C-130"},
-    {"color": [0, 60, 100], "isthing": 1, "id": 6, "name": "KC-135"},
-    {"color": [0, 80, 100], "isthing": 1, "id": 7, "name": "KC-10"},
-    {"color": [0, 60, 100], "isthing": 1, "id": 8, "name": "F22"},
-    {"color": [0, 80, 100], "isthing": 1, "id": 9, "name": "E3"}
+{"color": [102, 51, 153], "isthing": 1, "id": 0, "trainId": 0, "name": "E4B"},
+    {"color": [204, 0, 102], "isthing": 1, "id": 1, "trainId": 1, "name": "B-1B"},
+    {"color": [255, 102, 102], "isthing": 1, "id": 2, "trainId": 2, "name": "B-52"},
+    {"color": [255, 153, 51], "isthing": 1, "id": 3, "trainId": 3, "name": "C-5"},
+    {"color": [255, 204, 102], "isthing": 1, "id": 4, "trainId": 4, "name": "C-17A"},
+    {"color": [153, 255, 153], "isthing": 1, "id": 5, "trainId": 5, "name": "C-130"},
+    {"color": [102, 255, 204], "isthing": 1, "id": 6, "trainId": 6, "name": "KC-135"},
+    {"color": [51, 204, 255], "isthing": 1, "id": 7, "trainId": 7, "name": "KC-10"},
+    {"color": [153, 51, 255], "isthing": 1, "id": 8, "trainId": 8, "name": "F-22"},
+    {"color": [204, 102, 255], "isthing": 1, "id": 9, "trainId": 9, "name": "E-3"},
+    {"color": [255, 102, 153], "isthing": 1, "id": 10, "trainId": 10, "name": "others"},
+    {"color": [255, 51, 51], "isthing": 1, "id": 11, "trainId": 11, "name": "KC46A"},
+    {"color": [255, 153, 204], "isthing": 1, "id": 12, "trainId": 12, "name": "V22"},
+    {"color": [255, 204, 255], "isthing": 1, "id": 13, "trainId": 13, "name": "F-15"},
+    {"color": [204, 153, 255], "isthing": 1, "id": 14, "trainId": 14, "name": "F-16"},
+    {"color": [153, 102, 255], "isthing": 1, "id": 15, "trainId": 15, "name": "F/A-18"},
+    {"color": [102, 51, 255], "isthing": 1, "id": 16, "trainId": 16, "name": "F-35"},
+    {"color": [51, 0, 204], "isthing": 1, "id": 17, "trainId": 17, "name": "E-6"},
+    {"color": [0, 0, 102], "isthing": 1, "id": 18, "trainId": 18, "name": "E-8"},
+    {"color": [0, 102, 204], "isthing": 1, "id": 19, "trainId": 19, "name": "P-3"},
+    {"color": [102, 153, 255], "isthing": 1, "id": 20, "trainId": 20, "name": "p-3"},
+    {"color": [0, 204, 204], "isthing": 1, "id": 21, "trainId": 21, "name": "SU-24"},
+    {"color": [0, 255, 153], "isthing": 1, "id": 22, "trainId": 22, "name": "SU-27"},
+    {"color": [102, 255, 102], "isthing": 1, "id": 23, "trainId": 23, "name": "SU-30"},
+    {"color": [153, 255, 51], "isthing": 1, "id": 24, "trainId": 24, "name": "SU-33"},
+    {"color": [204, 255, 102], "isthing": 1, "id": 25, "trainId": 25, "name": "SU-34"},
+    {"color": [255, 255, 102], "isthing": 1, "id": 26, "trainId": 26, "name": "SU-35"},
+    {"color": [255, 204, 0], "isthing": 1, "id": 27, "trainId": 27, "name": "TU-22"},
+    {"color": [255, 153, 0], "isthing": 1, "id": 28, "trainId": 28, "name": "TU-95"},
+    {"color": [255, 102, 0], "isthing": 1, "id": 29, "trainId": 29, "name": "TU-160"},
+    {"color": [255, 51, 0], "isthing": 1, "id": 30, "trainId": 30, "name": "SU-95"},
+    {"color": [204, 0, 0], "isthing": 1, "id": 31, "trainId": 31, "name": "C-141"},
+    {"color": [153, 0, 0], "isthing": 1, "id": 32, "trainId": 32, "name": "TU-33"}
 ]
 
 # fmt: off
@@ -111,7 +135,7 @@ ADE20K_SEM_SEG_CATEGORIES = [
 def _get_coco_instances_meta():
     thing_ids = [k["id"] for k in COCO_CATEGORIES if k["isthing"] == 1]
     thing_colors = [k["color"] for k in COCO_CATEGORIES if k["isthing"] == 1]
-    assert len(thing_ids) == 9, len(thing_ids)
+    assert len(thing_ids) == 33, len(thing_ids)
     # Mapping from the incontiguous COCO category id to an id in [0, 79]
     thing_dataset_id_to_contiguous_id = {k: i for i, k in enumerate(thing_ids)}
     thing_classes = [k["name"] for k in COCO_CATEGORIES if k["isthing"] == 1]

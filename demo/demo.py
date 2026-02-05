@@ -49,7 +49,7 @@ def get_parser():
     parser.add_argument(
         "--input",
         nargs="+",
-        default=["C:/Users/Administrator/Desktop/visio/images"],
+        default=["D:/Deeplearning_code/yolov8/detectron2/tools/datasets/data3/test2017"],
         help="A list of space separated input images; "
         "or a single glob pattern such as 'directory/*.jpg'",
     )
@@ -57,7 +57,7 @@ def get_parser():
         "--output",
         help="A file or directory to save output visualizations. "
         "If not given, will show output in an OpenCV window.",
-        default="C:/Users/Administrator/Desktop/output",
+        default="D:/Deeplearning_code/yolov8/detectron2/tools/data3/predict",
     )
 
     parser.add_argument(
@@ -69,7 +69,7 @@ def get_parser():
     parser.add_argument(
         "--opts",
         help="Modify config options using the command-line 'KEY VALUE' pairs",
-        default=['MODEL.WEIGHTS' , "C:/Users/Administrator/Desktop/experiment/data2/model_0004999.pth"],
+        default=['MODEL.WEIGHTS' , "D:/Deeplearning_code/yolov8/detectron2/tools/data3/model_0004999.pth"],
         nargs=argparse.REMAINDER,
     )
     return parser
