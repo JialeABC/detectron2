@@ -10,7 +10,7 @@ from torch import nn
 
 from detectron2.utils.comm import get_world_size, is_main_process
 from detectron2.utils.logger import log_every_n_seconds
-
+from fvcore.nn import flop_count
 
 class DatasetEvaluator:
     """
@@ -160,6 +160,7 @@ def inference_on_dataset(
                 total_compute_time = 0
                 total_eval_time = 0
 
+            # flop  = flop_count(model,inputs)
             start_compute_time = time.perf_counter()
             dict.get(callbacks or {}, "before_inference", lambda: None)()
             outputs = model(inputs)
